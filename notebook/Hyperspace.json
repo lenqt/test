@@ -17,14 +17,11 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "74d5169a-01c0-4861-a113-9d8ef8521622"
+				"spark.autotune.trackingId": "77568053-8fb7-41de-b070-595edb0e4094"
 			}
 		},
 		"metadata": {
 			"saveOutput": true,
-			"synapse_widget": {
-				"version": "0.1"
-			},
 			"enableDebugMode": false,
 			"kernelspec": {
 				"name": "synapse_pyspark",
@@ -46,8 +43,9 @@
 				"nodeCount": 3,
 				"cores": 4,
 				"memory": 28,
-				"extraHeader": null
-			}
+				"automaticScaleJobs": false
+			},
+			"sessionKeepAliveTimeout": 30
 		},
 		"cells": [
 			{
@@ -72,8 +70,7 @@
 					"# Create an instance of Hyperspace\r\n",
 					"hyperspace = Hyperspace(spark)"
 				],
-				"attachments": null,
-				"execution_count": 1
+				"execution_count": 3
 			},
 			{
 				"cell_type": "code",
@@ -97,8 +94,7 @@
 					"hyperspace.createIndex(dfCustomers, indexConfigCustomers)\t# only create index once\r\n",
 					"hyperspace.indexes().show()"
 				],
-				"attachments": null,
-				"execution_count": 2
+				"execution_count": 6
 			},
 			{
 				"cell_type": "code",
@@ -118,8 +114,7 @@
 					"df1.show()\r\n",
 					"df1.explain(True)"
 				],
-				"attachments": null,
-				"execution_count": 3
+				"execution_count": 7
 			},
 			{
 				"cell_type": "code",
@@ -140,8 +135,7 @@
 					"spark.conf.set(\"spark.hyperspace.explain.displayMode\", \"html\")\r\n",
 					"hyperspace.explain(df1, True, displayHTML)"
 				],
-				"attachments": null,
-				"execution_count": 4
+				"execution_count": 8
 			},
 			{
 				"cell_type": "code",
@@ -161,8 +155,75 @@
 					"\r\n",
 					"hyperspace.explain(eqJoin, True, displayHTML)"
 				],
-				"attachments": null,
-				"execution_count": 5
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Disable Hyperspace - Hyperspace rules no longer apply during query optimization. Disabling Hyperspace has no impact on created indexes because they remain intact\r\n",
+					"Hyperspace.disable(spark)\r\n",
+					"\r\n",
+					"hyperspace.deleteIndex(\"indexSALES\")\r\n",
+					"hyperspace.vacuumIndex(\"indexSALES\")\r\n",
+					"hyperspace.deleteIndex(\"indexCUSTOMERS\")\r\n",
+					"hyperspace.vacuumIndex(\"indexCUSTOMERS\")"
+				],
+				"execution_count": 10
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from notebookutils import mssparkutils\r\n",
+					"\r\n",
+					"#\r\n",
+					"# Microsoft Spark Utilities\r\n",
+					"#\r\n",
+					"# https://docs.microsoft.com/en-us/azure/synapse-analytics/spark/microsoft-spark-utilities?pivots=programming-language-python\r\n",
+					"#\r\n",
+					"\r\n",
+					"# Azure storage access info\r\n",
+					"blob_account_name = datalake\r\n",
+					"blob_container_name = 'wwi-02'\r\n",
+					"blob_relative_path = '/'\r\n",
+					"linkedServiceName = datalake\r\n",
+					"blob_sas_token = mssparkutils.credentials.getConnectionStringOrCreds(linkedServiceName)\r\n",
+					"\r\n",
+					"# Allow SPARK to access from Blob remotely\r\n",
+					"spark.conf.set('fs.azure.sas.%s.%s.blob.core.windows.net' % (blob_container_name, blob_account_name), blob_sas_token)\r\n",
+					"\r\n",
+					"files = mssparkutils.fs.ls('/')\r\n",
+					"for file in files:\r\n",
+					"    print(file.name, file.isDir, file.isFile, file.path, file.size)\r\n",
+					"\r\n",
+					"mssparkutils.fs.mkdirs('/SomeNewFolder')\r\n",
+					"\r\n",
+					"files = mssparkutils.fs.ls('/')\r\n",
+					"for file in files:\r\n",
+					"    print(file.name, file.isDir, file.isFile, file.path, file.size)"
+				],
+				"execution_count": 14
 			}
 		]
 	}
